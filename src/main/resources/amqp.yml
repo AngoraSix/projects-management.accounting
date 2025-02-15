@@ -1,0 +1,53 @@
+# https://docs.spring.io/spring-cloud-stream/reference/rabbit/rabbit_overview/putting-it-all-together.html#page-title
+configs:
+  amqp:
+    bindings:
+      tbd: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_BINDINGS_MGMTACCOUNTINGYNCING:mgmtAccountingSyncing}
+      pendingSyncingOut: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_BINDINGS_PENDINGSYNCINGOUT:pendingSyncingOut}
+
+spring:
+  cloud:
+    stream:
+      output-bindings: # we need explicit bindings bc we use StreamBridge
+        - ${configs.amqp.bindings.mgmtAccountingSyncing}
+        - ${configs.amqp.bindings.pendingSyncingOut}
+      bindings:
+        mgmtAccountingSyncing:
+          destination: ${A6_MGMT_ACCOUNTING_RABBITMQ_OUTPUT_MGMTACCOUNTINGYNCING_EXCHANGE:mgmtAccountingSyncing} # existing exchange
+        pendingSyncingOut:
+          destination: ${A6_MGMT_ACCOUNTING_RABBITMQ_OUTPUT_PENDINGSYNCINGOUT_EXCHANGE:pendingSyncing} # existing exchange
+        pendingSyncing-in-0:
+          destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_PENDINGACCOUNTING_INPUT_EXCHANGE:pendingSyncing} # existing exchange (or creates)?
+          group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_PENDINGACCOUNTING_INPUT_QUEUE:reprocessing}
+          binder: a6Rabbit
+        tasksSyncingCorrespondence-in-0:
+          destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_TASKSSYNCINGCORRESPONDENCE_INPUT_EXCHANGE:mgmtTasksSyncing} # existing exchange (or creates)?
+          group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_TASKSSYNCINGCORRESPONDENCE_INPUT_QUEUE:mgmtAccountingCorrespondence}
+          binder: a6Rabbit
+      rabbit:
+        bindings:
+          mgmtAccountingSyncing:
+            producer:
+              republishToDlq: false
+          pendingSyncing-in-0:
+            consumer:
+              republishToDlq: false
+          tasksSyncingCorrespondence-in-0:
+            consumer:
+              republishToDlq: false
+          pendingSyncingOut:
+            producer:
+              republishToDlq: false
+      binders:
+        a6Rabbit:
+          type: rabbit
+          environment:
+            spring:
+              rabbitmq:
+                host: ${A6_MGMT_ACCOUNTING_RABBITMQ_HO  ST:localhost}
+                port: ${A6_MGMT_ACCOUNTING_RABBITMQ_PORT:5672}
+                username: ${A6_MGMT_ACCOUNTING_RABBITMQ_USER:guest}
+                password: ${A6_MGMT_ACCOUNTING_RABBITMQ_PASSWORD:guest}
+                virtual-host: ${A6_MGMT_ACCOUNTING_RABBITMQ_VHOST:/}
+    function:
+      definition: pendingSyncing;tasksSyncingCorrespondence
