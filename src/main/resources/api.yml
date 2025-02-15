@@ -1,0 +1,10 @@
+configs:
+  api:
+    basePaths:
+      projectsManagementAccounting: "/managements-accounting"
+      baseListCrudRoute: ""
+      baseByIdCrudRoute: "/{id}"
+    routes:
+      tbd: "/"
+    accountingActions:
+      tbd: tbd

@@ -1,0 +1,21 @@
+context:
+  initializer:
+    classes: com.angorasix.projects.management.accounting.BeansInitializer
+server:
+  port: ${A6_PROJECTS_MGMT_ACCOUNTING_PORT:10302}
+
+logging:
+  level:
+    root: INFO
+    reactor.netty: INFO
+    org.springframework.web.reactive.function.client: INFO
+
+spring:
+  config:
+    import: optional:file:config/env.properties, classpath:/api.yml, classpath:/security.yml, classpath:/amqp.yml
+  application:
+    name: ${APP_NAME:projects.management.accounting}
+  data:
+    mongodb:
+      uri: ${A6_PROJECTS_MGMT_ACCOUNTING_MONGO_DB_URI:mongodb://localhost:27017/}${A6_PROJECTS_MGMT_ACCOUNTING_MONGO_DB_NAME:a6-management-accounting}${A6_PROJECTS_MGMT_ACCOUNTING_MONGO_DB_PARAMS:?}
+      auto-index-creation: true
