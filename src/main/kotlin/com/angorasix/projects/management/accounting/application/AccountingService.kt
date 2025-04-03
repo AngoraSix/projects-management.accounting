@@ -8,10 +8,8 @@ import org.springframework.cloud.stream.function.StreamBridge
  *
  * @author rozagerardo
  */
-class IntegrationAccountingService(
+class AccountingService(
 //    private val repository: IntegrationAssetRepository,
     private val streamBridge: StreamBridge,
     private val amqpConfigs: AmqpConfigurations,
-) {
-
-}
+)
