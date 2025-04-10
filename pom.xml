@@ -67,15 +67,15 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
     </dependency>
-    <dependency>
-      <artifactId>spring-boot-starter-oauth2-client</artifactId>
-      <groupId>org.springframework.boot</groupId>
-    </dependency>
+<!--    <dependency>-->
+<!--      <artifactId>spring-boot-starter-oauth2-client</artifactId>-->
+<!--      <groupId>org.springframework.boot</groupId>-->
+<!--    </dependency>-->
 
     <dependency>
       <groupId>com.angorasix</groupId>
       <artifactId>commons.core</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.3-SNAPSHOT</version>
     </dependency>
 
     <!-- check if necessary with newer versions https://github.com/Playtika/testcontainers-spring-boot/issues/562 -->

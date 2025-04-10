@@ -31,9 +31,9 @@ class ProjectManagementAccountingRouter(
                         next,
                     )
                 }
-                apiConfigs.basePaths.baseByIdCrudRoute.nest {
-                    defineByIdEndpoints()
-                }
+//                apiConfigs.basePaths.baseByIdCrudRoute.nest {
+//                    defineByIdEndpoints()
+//                }
                 apiConfigs.basePaths.baseListCrudRoute.nest {
                     defineListEndpoints()
                 }
@@ -46,6 +46,10 @@ class ProjectManagementAccountingRouter(
     }
 
     private fun CoRouterFunctionDsl.defineListEndpoints() {
+        method(
+            apiConfigs.routes.tbd.method,
+            handler::tbd,
+        )
         // path(...) if extra path,
         // method(...) within sharing the same path
     }

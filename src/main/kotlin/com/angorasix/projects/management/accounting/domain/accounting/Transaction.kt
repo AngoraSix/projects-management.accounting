@@ -44,7 +44,6 @@ interface TimeBasedDistribution {
     val mainValue: Double // in general, the value of the estimation output (caps)
     val duration: Duration
     val startInstant: Instant? // Might start since the point in which the account is activated, not defined beforehand
-//    val additionalParameters: Map<String, Double> // slope, intercept, ...
 
     fun evaluateAt(t: Instant): Double
 

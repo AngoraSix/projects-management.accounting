@@ -1,8 +1,15 @@
 package com.angorasix.projects.management.accounting.domain.accounting
 
+import com.angorasix.projects.management.accounting.domain.accounting.commands.ActivateAccountCommand
+import com.angorasix.projects.management.accounting.domain.accounting.commands.AddTransactionCommand
+import com.angorasix.projects.management.accounting.domain.accounting.commands.CreateContributorAccountCommand
+import com.angorasix.projects.management.accounting.domain.accounting.events.AccountActivatedEvent
+import com.angorasix.projects.management.accounting.domain.accounting.events.ContributorAccountCreatedEvent
+import com.angorasix.projects.management.accounting.domain.accounting.events.TransactionAddedEvent
 import org.axonframework.commandhandling.CommandHandler
 import org.axonframework.eventsourcing.EventSourcingHandler
 import org.axonframework.modelling.command.AggregateIdentifier
+import org.axonframework.modelling.command.AggregateLifecycle.apply
 import org.axonframework.spring.stereotype.Aggregate
 import java.time.Instant
 
@@ -11,43 +18,73 @@ class ContributorAccount() {
     @AggregateIdentifier
     private lateinit var accountId: String
 
+    private var contributorId: String? = null
     private var currency: String? = null
-
     private var accountType: AccountType? = null
-
     private var status: ContributorAccountStatus =
         ContributorAccountStatus(
             status = ContributorAccountStatusValues.PENDING,
         )
-
-//    private var balance
-//    might need it to enforce rules, but might want to make it more performant
+    private val transactions: MutableList<Transaction> = mutableListOf()
 
     @CommandHandler
     constructor(cmd: CreateContributorAccountCommand) : this() {
-        apply(ContributorAccountCreatedEvent(cmd.accountId, cmd.currency, cmd.accountType))
+        apply(
+            ContributorAccountCreatedEvent(
+                accountId = cmd.accountId,
+                projectManagementId = cmd.projectManagementId,
+                contributorId = cmd.contributorId,
+                currency = cmd.currency,
+                accountType = cmd.accountType,
+                createdInstant = cmd.createdInstant,
+            ),
+        )
     }
 
     @CommandHandler
     fun handle(cmd: AddTransactionCommand) {
-        // domain validations
-        require(!cmd.functions.isNullOrEmpty()) { "At least one distribution function is required." }
-        apply(TransactionAddedEvent(accountId, cmd.transactionId, cmd.functions, cmd.timestamp))
+        apply(
+            TransactionAddedEvent(
+                accountId = cmd.accountId,
+                transactionId = cmd.transactionId,
+                transaction = cmd.transaction,
+            ),
+        )
+    }
+
+    @CommandHandler
+    fun handle(cmd: ActivateAccountCommand) {
+        if (status.status == ContributorAccountStatusValues.PENDING) {
+            apply(AccountActivatedEvent(cmd.accountId, cmd.activationInstant))
+        }
     }
 
     @EventSourcingHandler
-    fun on(evt: ContributorAccountCreatedEvent) {
-        this.accountId = evt.accountId
-        this.currency = evt.currency
-        this.accountType = evt.accountType
-        // other initialization logic
+    fun on(event: ContributorAccountCreatedEvent) {
+        accountId = event.accountId
+        contributorId = event.contributorId
+        currency = event.currency
+        accountType = event.accountType
+        status = ContributorAccountStatus(ContributorAccountStatusValues.ACTIVE, event.createdInstant)
     }
 
     @EventSourcingHandler
-    fun on(evt: TransactionAddedEvent) {
-        // possibly store transaction references or essential domain data
-        // e.g., a mutable list of transactions, if you want to maintain them in the aggregate
+    fun on(event: TransactionAddedEvent) {
+        transactions.add(event.transaction)
+        // Optionally, update additional state if needed.
     }
+
+    @EventSourcingHandler
+    fun on(event: AccountActivatedEvent) {
+        status =
+            status.copy(
+                activationDate = event.activationInstant,
+                status = ContributorAccountStatusValues.ACTIVE,
+            )
+    }
+
+    // Business method to compute the current balance.
+    fun currentBalance(): Double = transactions.sumOf { tx -> tx.valueOperations.sumOf { op -> op.valueDistribution.integrateToNow() } }
 }
 
 data class ContributorAccountStatus(
@@ -59,4 +96,9 @@ enum class ContributorAccountStatusValues {
     PENDING,
     ACTIVE,
     DISABLED,
+}
+
+enum class AccountType {
+    OWNERSHIP,
+    FINANCIAL,
 }

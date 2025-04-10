@@ -1,13 +1,14 @@
 package com.angorasix.projects.management.accounting.infrastructure.service
 
 import com.angorasix.projects.management.accounting.application.AccountingService
-import com.angorasix.projects.management.accounting.infrastructure.config.configurationproperty.amqp.AmqpConfigurations
 import com.angorasix.projects.management.accounting.infrastructure.config.configurationproperty.api.ApiConfigs
-import com.angorasix.projects.management.accounting.messaging.handler.ProjectsManagementAccountingMessagingHandler
+import com.angorasix.projects.management.accounting.infrastructure.eventsourcing.projections.ContributorAccountProjection
+import com.angorasix.projects.management.accounting.infrastructure.eventsourcing.repository.ContributorAccountViewRepository
+import com.angorasix.projects.management.accounting.messaging.handler.AccountingMessagingHandler
 import com.angorasix.projects.management.accounting.presentation.handler.ProjectManagementAccountingHandler
 import com.angorasix.projects.management.accounting.presentation.router.ProjectManagementAccountingRouter
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.cloud.stream.function.StreamBridge
+import org.axonframework.commandhandling.gateway.CommandGateway
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -15,9 +16,10 @@ import org.springframework.context.annotation.Configuration
 class ServiceConfiguration {
     @Bean
     fun accountingService(
-        streamBridge: StreamBridge,
-        amqpConfigs: AmqpConfigurations,
-    ): AccountingService = AccountingService(streamBridge, amqpConfigs)
+//        streamBridge: StreamBridge,
+//        amqpConfigs: AmqpConfigurations,
+        commandGateway: CommandGateway,
+    ): AccountingService = AccountingService(commandGateway)
 
     @Bean
     fun projectManagementAccountingHandler(
@@ -30,11 +32,15 @@ class ServiceConfiguration {
     fun projectsManagementAccountingMessagingHandler(
         service: AccountingService,
         objectMapper: ObjectMapper,
-    ) = ProjectsManagementAccountingMessagingHandler(service, objectMapper)
+    ) = AccountingMessagingHandler(service, objectMapper)
 
     @Bean
     fun projectManagementAccountingRouter(
         handler: ProjectManagementAccountingHandler,
         apiConfigs: ApiConfigs,
     ) = ProjectManagementAccountingRouter(handler, apiConfigs).projectRouterFunction()
+
+    @Bean
+    fun contributorAccountProjection(repository: ContributorAccountViewRepository): ContributorAccountProjection =
+        ContributorAccountProjection(repository)
 }

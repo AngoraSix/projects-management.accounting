@@ -1,0 +1,8 @@
+axon:
+  axonserver:
+    servers: localhost:8124
+    enabled: true
+    authentication:
+      enabled: false
+  serializer:
+    general: JACKSON # Not with env properties to avoid changing after deploy. Alternatives: events / XSTREAM

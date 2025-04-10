@@ -1,7 +1,7 @@
 package com.angorasix.projects.management.accounting.messaging.router
 
 import com.angorasix.commons.infrastructure.intercommunication.dto.messaging.A6InfraMessageDto
-import com.angorasix.projects.management.accounting.messaging.handler.ProjectsManagementAccountingMessagingHandler
+import com.angorasix.projects.management.accounting.messaging.handler.AccountingMessagingHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration
  * @author rozagerardo
  */
 @Configuration
-class ProjectsManagementAccountingMessagingRouter(
-    val handler: ProjectsManagementAccountingMessagingHandler,
+class AccountingMessagingRouter(
+    val handler: AccountingMessagingHandler,
 ) {
     @Bean
-    fun batchImport(): (A6InfraMessageDto) -> Unit = { handler.processBatchImport(it) }
+    fun createContributorAccountsForMgmt(): (A6InfraMessageDto) -> Unit = { handler.createContributorAccountsForMgmt(it) }
 }
