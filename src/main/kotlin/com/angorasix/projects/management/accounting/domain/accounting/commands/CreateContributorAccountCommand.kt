@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.domain.accounting.commands
 
-import com.angorasix.projects.management.accounting.domain.accounting.AccountType
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.AccountType
 import java.time.Instant
 
 data class CreateContributorAccountCommand(

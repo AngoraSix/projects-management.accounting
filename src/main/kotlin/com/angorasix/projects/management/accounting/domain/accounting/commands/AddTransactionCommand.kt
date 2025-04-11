@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.domain.accounting.commands
 
-import com.angorasix.projects.management.accounting.domain.accounting.Transaction
+import com.angorasix.projects.management.accounting.domain.accounting.entities.Transaction
 import java.time.Instant
 
 data class AddTransactionCommand(

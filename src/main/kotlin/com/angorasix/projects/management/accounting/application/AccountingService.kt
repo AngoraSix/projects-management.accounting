@@ -1,11 +1,11 @@
 package com.angorasix.projects.management.accounting.application
 
 import com.angorasix.commons.domain.projectmanagement.accounting.A6_OWNERSHIP_CAPS_CURRENCY_ID
-import com.angorasix.projects.management.accounting.domain.accounting.AccountType
-import com.angorasix.projects.management.accounting.domain.accounting.Transaction
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.AccountType
 import com.angorasix.projects.management.accounting.domain.accounting.commands.ActivateAccountCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.AddTransactionCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.CreateContributorAccountCommand
+import com.angorasix.projects.management.accounting.domain.accounting.entities.Transaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext

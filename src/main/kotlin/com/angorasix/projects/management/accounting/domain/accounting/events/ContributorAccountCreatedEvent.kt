@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.domain.accounting.events
 
-import com.angorasix.projects.management.accounting.domain.accounting.AccountType
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.AccountType
 import java.time.Instant
 
 data class ContributorAccountCreatedEvent(
