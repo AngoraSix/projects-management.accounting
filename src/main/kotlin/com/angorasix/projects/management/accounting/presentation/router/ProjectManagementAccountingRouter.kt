@@ -22,22 +22,23 @@ class ProjectManagementAccountingRouter(
      *
      * @return the [RouterFunction] with all the routes for ProjectManagements
      */
-    fun projectRouterFunction() = coRouter {
-        apiConfigs.basePaths.projectsManagementAccounting.nest {
-            filter { request, next ->
-                extractRequestingContributor(
-                    request,
-                    next,
-                )
-            }
-            apiConfigs.basePaths.baseByIdCrudRoute.nest {
-                defineByIdEndpoints()
-            }
-            apiConfigs.basePaths.baseListCrudRoute.nest {
-                defineListEndpoints()
+    fun projectRouterFunction() =
+        coRouter {
+            apiConfigs.basePaths.projectsManagementAccounting.nest {
+                filter { request, next ->
+                    extractRequestingContributor(
+                        request,
+                        next,
+                    )
+                }
+//                apiConfigs.basePaths.baseByIdCrudRoute.nest {
+//                    defineByIdEndpoints()
+//                }
+                apiConfigs.basePaths.baseListCrudRoute.nest {
+                    defineListEndpoints()
+                }
             }
         }
-    }
 
     private fun CoRouterFunctionDsl.defineByIdEndpoints() {
         // path(...) if extra path,
@@ -45,6 +46,10 @@ class ProjectManagementAccountingRouter(
     }
 
     private fun CoRouterFunctionDsl.defineListEndpoints() {
+        method(
+            apiConfigs.routes.tbd.method,
+            handler::tbd,
+        )
         // path(...) if extra path,
         // method(...) within sharing the same path
     }

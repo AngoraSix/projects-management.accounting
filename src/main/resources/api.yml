@@ -5,6 +5,12 @@ configs:
       baseListCrudRoute: ""
       baseByIdCrudRoute: "/{id}"
     routes:
-      tbd: "/"
+      tbd:
+        name: tbd
+        basePaths:
+          - ${configs.api.basePaths.projectsManagementAccounting}
+          - ${configs.api.basePaths.baseListCrudRoute}
+        method: GET
+        path: "/"
     accountingActions:
       tbd: tbd
