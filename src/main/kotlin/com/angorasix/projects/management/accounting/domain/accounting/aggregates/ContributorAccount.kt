@@ -1,8 +1,9 @@
-package com.angorasix.projects.management.accounting.domain.accounting
+package com.angorasix.projects.management.accounting.domain.accounting.aggregates
 
 import com.angorasix.projects.management.accounting.domain.accounting.commands.ActivateAccountCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.AddTransactionCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.CreateContributorAccountCommand
+import com.angorasix.projects.management.accounting.domain.accounting.entities.Transaction
 import com.angorasix.projects.management.accounting.domain.accounting.events.AccountActivatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.ContributorAccountCreatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.TransactionAddedEvent

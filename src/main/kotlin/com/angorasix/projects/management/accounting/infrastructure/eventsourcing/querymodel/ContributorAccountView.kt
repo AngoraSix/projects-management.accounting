@@ -1,7 +1,7 @@
 package com.angorasix.projects.management.accounting.infrastructure.eventsourcing.querymodel
 
-import com.angorasix.projects.management.accounting.domain.accounting.ContributorAccountStatusValues
-import com.angorasix.projects.management.accounting.domain.accounting.TransactionOperation
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccountStatusValues
+import com.angorasix.projects.management.accounting.domain.accounting.entities.TransactionOperation
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant

@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.infrastructure.eventsourcing.projections
 
-import com.angorasix.projects.management.accounting.domain.accounting.ContributorAccountStatusValues
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccountStatusValues
 import com.angorasix.projects.management.accounting.domain.accounting.events.AccountActivatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.ContributorAccountCreatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.TransactionAddedEvent
