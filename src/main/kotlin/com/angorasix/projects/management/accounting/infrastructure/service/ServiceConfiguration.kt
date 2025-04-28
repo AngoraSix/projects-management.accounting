@@ -29,10 +29,7 @@ class ServiceConfiguration {
     ) = ProjectManagementAccountingHandler(service, apiConfigs, objectMapper)
 
     @Bean
-    fun projectsManagementAccountingMessagingHandler(
-        service: AccountingService,
-        objectMapper: ObjectMapper,
-    ) = AccountingMessagingHandler(service, objectMapper)
+    fun projectsManagementAccountingMessagingHandler(service: AccountingService) = AccountingMessagingHandler(service)
 
     @Bean
     fun projectManagementAccountingRouter(

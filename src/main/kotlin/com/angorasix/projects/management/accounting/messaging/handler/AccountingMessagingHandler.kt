@@ -6,7 +6,6 @@ import com.angorasix.commons.infrastructure.intercommunication.dto.A6InfraTopics
 import com.angorasix.commons.infrastructure.intercommunication.dto.messaging.A6InfraMessageDto
 import com.angorasix.commons.infrastructure.intercommunication.dto.projectmanagement.ProjectManagementContributorRegistered
 import com.angorasix.projects.management.accounting.application.AccountingService
-import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -17,20 +16,13 @@ import kotlinx.coroutines.runBlocking
  */
 class AccountingMessagingHandler(
     private val service: AccountingService,
-    private val objectMapper: ObjectMapper,
 ) {
-    fun createContributorAccountsForMgmt(message: A6InfraMessageDto) =
+    fun createContributorAccountsForMgmt(message: A6InfraMessageDto<ProjectManagementContributorRegistered>) =
         runBlocking {
-            // TBD all this
             if (message.topic == A6InfraTopics.PROJECT_MANAGEMENT_CONTRIBUTOR_REGISTERED.value &&
                 message.targetType == A6DomainResource.ProjectManagement
             ) {
-                val projectManagementContributorRegisteredEventJson = objectMapper.writeValueAsString(message.messageData)
-                val contributorRegisteredEvent =
-                    objectMapper.readValue(
-                        projectManagementContributorRegisteredEventJson,
-                        ProjectManagementContributorRegistered::class.java,
-                    )
+                val contributorRegisteredEvent = message.messageData
 
                 service.createContributorAccountsForProjectManagement(
                     projectManagementId = contributorRegisteredEvent.projectManagementId,

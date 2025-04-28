@@ -25,12 +25,12 @@ data class TransactionSource(
 )
 
 data class TransactionOperation(
-    val entryType: EntryType,
-    val valueDistribution: TimeBasedDistribution,
+    val balanceEffect: BalanceEffect,
+    val valueDistribution: List<TimeBasedDistribution>,
     val fullyDefinedInstant: Instant,
 )
 
-enum class EntryType {
+enum class BalanceEffect {
     DEBIT,
     CREDIT,
 }
