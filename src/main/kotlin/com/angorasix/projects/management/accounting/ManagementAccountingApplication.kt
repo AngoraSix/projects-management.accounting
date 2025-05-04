@@ -19,7 +19,7 @@ import org.springframework.hateoas.support.WebStack
 @ConfigurationPropertiesScan(
     "com.angorasix.projects.management.accounting.infrastructure.config.configurationproperty",
 )
-class ProjectsManagementIntegrationsApplication
+class ManagementAccountingApplication
 
 /**
  * Main application method.
@@ -27,5 +27,5 @@ class ProjectsManagementIntegrationsApplication
  * @param args java args
  */
 fun main(args: Array<String>) {
-    runApplication<ProjectsManagementIntegrationsApplication>(args = args)
+    runApplication<ManagementAccountingApplication>(args = args)
 }

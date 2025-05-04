@@ -28,9 +28,16 @@ data class TransactionOperation(
     val balanceEffect: BalanceEffect,
     val valueDistribution: List<TimeBasedDistribution>,
     val fullyDefinedInstant: Instant,
-)
+) {
+    fun signedAmount(): Double {
+        val area = valueDistribution.sumOf { it.integrateToNow() }
+        return area * balanceEffect.multiplier
+    }
+}
 
-enum class BalanceEffect {
-    DEBIT,
-    CREDIT,
+enum class BalanceEffect(
+    val multiplier: Int,
+) {
+    DEBIT(-1),
+    CREDIT(1),
 }

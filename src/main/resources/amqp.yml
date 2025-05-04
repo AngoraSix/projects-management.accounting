@@ -9,8 +9,8 @@ spring:
     stream:
       bindings:
         createContributorAccountsForMgmt-in-0:
-          destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_EXCHANGE:projectManagement} # existing exchange (or creates)?
-          group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_QUEUE:contributorRegistered}
+          destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_EXCHANGE:managementContributorRegistered} # existing exchange (or creates)?
+          group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_QUEUE:accountingRegistration}
           binder: a6Rabbit
       rabbit:
         bindings:
