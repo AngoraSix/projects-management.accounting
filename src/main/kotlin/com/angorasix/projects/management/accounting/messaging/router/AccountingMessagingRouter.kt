@@ -1,7 +1,7 @@
 package com.angorasix.projects.management.accounting.messaging.router
 
-import com.angorasix.commons.infrastructure.intercommunication.dto.messaging.A6InfraMessageDto
-import com.angorasix.commons.infrastructure.intercommunication.dto.projectmanagement.ProjectManagementContributorRegistered
+import com.angorasix.commons.infrastructure.intercommunication.messaging.A6InfraMessageDto
+import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ProjectManagementContributorRegistered
 import com.angorasix.projects.management.accounting.messaging.handler.AccountingMessagingHandler
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

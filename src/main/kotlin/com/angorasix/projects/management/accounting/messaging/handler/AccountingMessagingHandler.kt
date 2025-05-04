@@ -1,10 +1,9 @@
 package com.angorasix.projects.management.accounting.messaging.handler
 
-import com.angorasix.commons.domain.projectmanagement.core.BylawWellknownScope
-import com.angorasix.commons.infrastructure.intercommunication.dto.A6DomainResource
-import com.angorasix.commons.infrastructure.intercommunication.dto.A6InfraTopics
-import com.angorasix.commons.infrastructure.intercommunication.dto.messaging.A6InfraMessageDto
-import com.angorasix.commons.infrastructure.intercommunication.dto.projectmanagement.ProjectManagementContributorRegistered
+import com.angorasix.commons.infrastructure.intercommunication.A6DomainResource
+import com.angorasix.commons.infrastructure.intercommunication.A6InfraTopics
+import com.angorasix.commons.infrastructure.intercommunication.messaging.A6InfraMessageDto
+import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ProjectManagementContributorRegistered
 import com.angorasix.projects.management.accounting.application.AccountingService
 import kotlinx.coroutines.runBlocking
 
@@ -20,7 +19,7 @@ class AccountingMessagingHandler(
     fun createContributorAccountsForMgmt(message: A6InfraMessageDto<ProjectManagementContributorRegistered>) =
         runBlocking {
             if (message.topic == A6InfraTopics.PROJECT_MANAGEMENT_CONTRIBUTOR_REGISTERED.value &&
-                message.targetType == A6DomainResource.ProjectManagement
+                message.targetType == A6DomainResource.PROJECT_MANAGEMENT
             ) {
                 val contributorRegisteredEvent = message.messageData
 
@@ -28,12 +27,8 @@ class AccountingMessagingHandler(
                     projectManagementId = contributorRegisteredEvent.projectManagementId,
                     contributorId = contributorRegisteredEvent.registeredContributorId,
                     requiresOwnershipAccount =
-                        contributorRegisteredEvent.relevantProjectManagementBylaws
-                            .find {
-                                it.scope ==
-                                    BylawWellknownScope.OWNERSHIP_IS_A6MANAGED.name
-                            }?.definition as Boolean?
-                            ?: false,
+                        contributorRegisteredEvent.participatesInOwnership,
+//                    managedCurrencies = contributorRegisteredEvent.managementFinancialCurrencies,
                 )
             }
         }

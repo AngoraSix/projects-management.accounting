@@ -7,7 +7,6 @@ import com.angorasix.projects.management.accounting.infrastructure.eventsourcing
 import com.angorasix.projects.management.accounting.messaging.handler.AccountingMessagingHandler
 import com.angorasix.projects.management.accounting.presentation.handler.ProjectManagementAccountingHandler
 import com.angorasix.projects.management.accounting.presentation.router.ProjectManagementAccountingRouter
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.axonframework.commandhandling.gateway.CommandGateway
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -25,8 +24,7 @@ class ServiceConfiguration {
     fun projectManagementAccountingHandler(
         service: AccountingService,
         apiConfigs: ApiConfigs,
-        objectMapper: ObjectMapper,
-    ) = ProjectManagementAccountingHandler(service, apiConfigs, objectMapper)
+    ) = ProjectManagementAccountingHandler(service, apiConfigs)
 
     @Bean
     fun projectsManagementAccountingMessagingHandler(service: AccountingService) = AccountingMessagingHandler(service)

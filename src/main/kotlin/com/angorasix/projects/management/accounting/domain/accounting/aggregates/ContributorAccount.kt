@@ -85,21 +85,24 @@ class ContributorAccount() {
     }
 
     // Business method to compute the current balance.
-    fun currentBalance(): Double = transactions.sumOf { tx -> tx.valueOperations.sumOf { op -> op.valueDistribution.integrateToNow() } }
-}
+    fun currentBalance(): Double =
+        transactions
+            .flatMap { it.valueOperations }
+            .sumOf { it.signedAmount() }
 
-data class ContributorAccountStatus(
-    val status: ContributorAccountStatusValues,
-    val activationDate: Instant? = null, // the account activationDate
-)
+    data class ContributorAccountStatus(
+        val status: ContributorAccountStatusValues,
+        val activationDate: Instant? = null, // the account activationDate
+    )
 
-enum class ContributorAccountStatusValues {
-    PENDING,
-    ACTIVE,
-    DISABLED,
-}
+    enum class ContributorAccountStatusValues {
+        PENDING,
+        ACTIVE,
+        DISABLED,
+    }
 
-enum class AccountType {
-    OWNERSHIP,
-    FINANCIAL,
+    enum class AccountType {
+        OWNERSHIP,
+        FINANCIAL,
+    }
 }

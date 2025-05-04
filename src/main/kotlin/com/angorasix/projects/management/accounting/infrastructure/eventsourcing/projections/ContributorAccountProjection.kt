@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.infrastructure.eventsourcing.projections
 
-import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccountStatusValues
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccount
 import com.angorasix.projects.management.accounting.domain.accounting.events.AccountActivatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.ContributorAccountCreatedEvent
 import com.angorasix.projects.management.accounting.domain.accounting.events.TransactionAddedEvent
@@ -30,7 +30,7 @@ class ContributorAccountProjection(
                     unprocessedTransactionOperations = mutableListOf(),
                     status =
                         ContributorAccountStatusView(
-                            status = ContributorAccountStatusValues.PENDING,
+                            status = ContributorAccount.ContributorAccountStatusValues.PENDING,
                         ),
                 )
             repository.save(view)
@@ -45,7 +45,7 @@ class ContributorAccountProjection(
                 ?.let { view ->
                     // Here you might recalculate the new balance using your domain logic;
                     // for demonstration, we add the integrated value from the transaction.
-                    val additional = event.transaction.valueOperations.sumOf { op -> op.valueDistribution.integrateToNow() }
+                    val additional = event.transaction.valueOperations.sumOf { it.signedAmount() }
                     val updated =
                         view.copy(
                             lastUpdatedBalance = view.lastUpdatedBalance + additional,
@@ -67,7 +67,7 @@ class ContributorAccountProjection(
                         view.copyUpdateToInstant(event.activationInstant).copy(
                             status =
                                 ContributorAccountStatusView(
-                                    status = ContributorAccountStatusValues.ACTIVE,
+                                    status = ContributorAccount.ContributorAccountStatusValues.ACTIVE,
                                     activationDate = event.activationInstant,
                                 ),
                         )

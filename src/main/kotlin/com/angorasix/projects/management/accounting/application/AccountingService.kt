@@ -1,7 +1,7 @@
 package com.angorasix.projects.management.accounting.application
 
 import com.angorasix.commons.domain.projectmanagement.accounting.A6_OWNERSHIP_CAPS_CURRENCY_ID
-import com.angorasix.projects.management.accounting.domain.accounting.aggregates.AccountType
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccount
 import com.angorasix.projects.management.accounting.domain.accounting.commands.ActivateAccountCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.AddTransactionCommand
 import com.angorasix.projects.management.accounting.domain.accounting.commands.CreateContributorAccountCommand
@@ -28,7 +28,7 @@ class AccountingService(
         projectManagementId: String,
         contributorId: String,
         requiresOwnershipAccount: Boolean,
-//        managedCurrencies: List<String>, Future feature: Trello-CDwXGxpn
+        // managedCurrencies: Set<String>, // not checked, future feature: Trello-CDwXGxpn
 //        accountType: String, // You may convert this to an AccountType enum
 //        initialBalance: Double,
 //    ): CompletableFuture<String> {
@@ -42,7 +42,7 @@ class AccountingService(
                         projectManagementId = projectManagementId,
                         contributorId = contributorId,
                         currency = A6_OWNERSHIP_CAPS_CURRENCY_ID,
-                        accountType = AccountType.OWNERSHIP,
+                        accountType = ContributorAccount.AccountType.OWNERSHIP,
                         createdInstant = Instant.now(),
                     )
                 commandGateway.send<String>(cmd).await()

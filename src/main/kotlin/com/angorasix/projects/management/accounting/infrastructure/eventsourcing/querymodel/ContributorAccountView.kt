@@ -1,6 +1,6 @@
 package com.angorasix.projects.management.accounting.infrastructure.eventsourcing.querymodel
 
-import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccountStatusValues
+import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccount
 import com.angorasix.projects.management.accounting.domain.accounting.entities.TransactionOperation
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -27,6 +27,6 @@ data class ContributorAccountView(
 }
 
 data class ContributorAccountStatusView(
-    val status: ContributorAccountStatusValues,
+    val status: ContributorAccount.ContributorAccountStatusValues,
     val activationDate: Instant? = null, // the account activationDate
 )
