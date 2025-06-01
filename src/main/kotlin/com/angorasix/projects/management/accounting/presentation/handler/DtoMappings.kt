@@ -1,6 +1,5 @@
 package com.angorasix.projects.management.accounting.presentation.handler
 
-import com.angorasix.commons.domain.A6Contributor
 import com.angorasix.projects.management.accounting.infrastructure.config.configurationproperty.api.ApiConfigs
 import com.angorasix.projects.management.accounting.infrastructure.domain.AccountStats
 import com.angorasix.projects.management.accounting.infrastructure.domain.ContributorAccountingStats
@@ -20,7 +19,6 @@ fun ProjectManagementAccountingStats.convertToDto(): ProjectManagementAccounting
     )
 
 fun ProjectManagementAccountingStats.convertToDto(
-    requestingContributor: A6Contributor?,
     apiConfigs: ApiConfigs,
     request: ServerRequest,
 ): ProjectManagementAccountingStatsDto = convertToDto().resolveHypermedia(this, apiConfigs, request)

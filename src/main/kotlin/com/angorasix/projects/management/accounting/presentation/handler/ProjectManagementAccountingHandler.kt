@@ -37,7 +37,7 @@ class ProjectManagementAccountingHandler(
             .resolveProjectManagementTasksStats(
                 projectManagementId = projectManagementId,
                 requestingContributor = requestingContributor as A6Contributor?,
-            ).convertToDto(requestingContributor, apiConfigs, request)
+            ).convertToDto(apiConfigs, request)
             .let {
                 ok().contentType(MediaTypes.HAL_FORMS_JSON).bodyValueAndAwait(it)
             }
