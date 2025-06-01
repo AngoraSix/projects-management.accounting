@@ -45,7 +45,7 @@ class ContributorAccountProjection(
                 ?.let { view ->
                     // Here you might recalculate the new balance using your domain logic;
                     // for demonstration, we add the integrated value from the transaction.
-                    val additional = event.transaction.valueOperations.sumOf { it.signedAmount() }
+                    val additional = event.transaction.valueOperations.sumOf { it.signedCurrentAmount() }
                     val updated =
                         view.copy(
                             lastUpdatedBalance = view.lastUpdatedBalance + additional,

@@ -31,28 +31,18 @@ class ProjectManagementAccountingRouter(
                         next,
                     )
                 }
-                apiConfigs.basePaths.baseByIdCrudRoute.nest {
-                    defineByIdEndpoints()
-                }
-                apiConfigs.basePaths.baseListCrudRoute.nest {
-                    defineListEndpoints()
+                apiConfigs.basePaths.baseByProjectManagementIdCrudRoute.nest {
+                    defineByProjectManagementIdRoutes()
                 }
             }
         }
 
-    private fun CoRouterFunctionDsl.defineByIdEndpoints() {
-        method(
-            apiConfigs.routes.tbd.method,
-            handler::tbd,
-        )
-    }
-
-    private fun CoRouterFunctionDsl.defineListEndpoints() {
-        method(
-            apiConfigs.routes.tbd.method,
-            handler::tbd,
-        )
-        // path(...) if extra path,
-        // method(...) within sharing the same path
+    private fun CoRouterFunctionDsl.defineByProjectManagementIdRoutes() {
+        path(apiConfigs.routes.getProjectManagementAccountingStats.path).nest {
+            method(
+                apiConfigs.routes.getProjectManagementAccountingStats.method,
+                handler::getProjectManagementAccountingStats,
+            )
+        }
     }
 }

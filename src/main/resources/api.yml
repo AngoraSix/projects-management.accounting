@@ -1,16 +1,15 @@
 configs:
   api:
     basePaths:
-      projectsManagementAccounting: "/managements-accounting"
+      projectsManagementAccounting: "/management-accounting"
       baseListCrudRoute: ""
       baseByIdCrudRoute: "/{id}"
+      baseByProjectManagementIdCrudRoute: "/project-management/{projectManagementId}"
     routes:
-      tbd:
-        name: tbd
+      getProjectManagementAccountingStats:
+        name: getProjectManagementAccountingStats
         basePaths:
           - ${configs.api.basePaths.projectsManagementAccounting}
-          - ${configs.api.basePaths.baseListCrudRoute}
+          - ${configs.api.basePaths.baseByProjectManagementIdCrudRoute}
         method: GET
-        path: "/"
-    accountingActions:
-      tbd: tbd
+        path: "/stats"
