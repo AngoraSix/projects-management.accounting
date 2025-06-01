@@ -15,10 +15,9 @@ import org.springframework.context.annotation.Configuration
 class ServiceConfiguration {
     @Bean
     fun accountingService(
-//        streamBridge: StreamBridge,
-//        amqpConfigs: AmqpConfigurations,
+        repository: ContributorAccountViewRepository,
         commandGateway: CommandGateway,
-    ): AccountingService = AccountingService(commandGateway)
+    ): AccountingService = AccountingService(repository, commandGateway)
 
     @Bean
     fun projectManagementAccountingHandler(

@@ -17,20 +17,15 @@ data class ApiConfigs(
     var routes: RoutesConfigs,
     @NestedConfigurationProperty
     var basePaths: BasePathConfigs,
-    @NestedConfigurationProperty
-    var accountingActions: AccountingActions,
 )
 
 data class BasePathConfigs(
     val projectsManagementAccounting: String,
     val baseListCrudRoute: String,
     val baseByIdCrudRoute: String,
+    val baseByProjectManagementIdCrudRoute: String,
 )
 
 data class RoutesConfigs(
-    val tbd: Route,
-)
-
-data class AccountingActions(
-    val tbd: String,
+    val getProjectManagementAccountingStats: Route,
 )

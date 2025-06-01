@@ -6,9 +6,10 @@ server:
 
 logging:
   level:
-    root: INFO
-    reactor.netty: INFO
-    org.springframework.web.reactive.function.client: INFO
+    root: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_GENERAL:INFO}
+    org.springframework.web: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_WEB:INFO}
+    com.angorasix: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_ANGORASIX:INFO}
+    org.springframework.data.mongodb.core: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_DATA:INFO}
 
 spring:
   config:

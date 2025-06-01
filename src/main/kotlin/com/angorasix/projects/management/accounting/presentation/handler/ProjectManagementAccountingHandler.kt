@@ -1,5 +1,7 @@
 package com.angorasix.projects.management.accounting.presentation.handler
 
+import com.angorasix.commons.domain.A6Contributor
+import com.angorasix.commons.infrastructure.constants.AngoraSixInfrastructure
 import com.angorasix.projects.management.accounting.application.AccountingService
 import com.angorasix.projects.management.accounting.infrastructure.config.configurationproperty.api.ApiConfigs
 import org.springframework.hateoas.MediaTypes
@@ -18,8 +20,26 @@ class ProjectManagementAccountingHandler(
     private val service: AccountingService,
     private val apiConfigs: ApiConfigs,
 ) {
-    suspend fun tbd(request: ServerRequest): ServerResponse {
-        println("TBD: $service $apiConfigs $request")
-        return ok().contentType(MediaTypes.HAL_FORMS_JSON).bodyValueAndAwait("TBD")
+    /**
+     * Handler for the Get ProjectManagement Accounting Stats endpoint,
+     * retrieving a Mono with the requested ProjectManagementAccountingStats.
+     *
+     * @param request - HTTP `ServerRequest` object
+     * @return the `ServerResponse`
+     */
+    suspend fun getProjectManagementAccountingStats(request: ServerRequest): ServerResponse {
+        val requestingContributor =
+            request.attributes()[AngoraSixInfrastructure.REQUEST_ATTRIBUTE_CONTRIBUTOR_KEY]
+
+        val projectManagementId = request.pathVariable("projectManagementId")
+
+        return service
+            .resolveProjectManagementTasksStats(
+                projectManagementId = projectManagementId,
+                requestingContributor = requestingContributor as A6Contributor?,
+            ).convertToDto(requestingContributor, apiConfigs, request)
+            .let {
+                ok().contentType(MediaTypes.HAL_FORMS_JSON).bodyValueAndAwait(it)
+            }
     }
 }

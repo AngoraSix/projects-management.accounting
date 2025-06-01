@@ -15,7 +15,7 @@ data class ContributorAccountView(
     val accountType: String,
     val lastUpdatedBalance: Double, // Balance up to the last updated instant (checkpoint)
     val lastUpdatedInstant: Instant,
-    val unprocessedTransactionOperations: MutableList<TransactionOperation>,
+    val unprocessedTransactionOperations: List<TransactionOperation>,
     val status: ContributorAccountStatusView,
 ) {
     fun copyUpdateToInstant(checkpointInstant: Instant): ContributorAccountView =
@@ -24,6 +24,16 @@ data class ContributorAccountView(
             // lastUpdatedBalance = UPDATE BALANCE UP TO THIS POINT,
             // unprocessedTransactionOperations = UPDATE UNPROCESSED TRANSACTION OPERATIONS UP TO THIS POINT…
         )
+
+    /**
+     * Retorna el balance actual, que es la suma de:
+     *   • lastUpdatedBalance  (lo que ya estaba guardado en el checkpoint)
+     *   • más la suma de signedAmount() de cada TransactionOperation pendiente
+     */
+    fun calculateCurrentBalance(): Double {
+        val pendingTotal = unprocessedTransactionOperations.sumOf { it.signedCurrentAmount() }
+        return lastUpdatedBalance + pendingTotal
+    }
 }
 
 data class ContributorAccountStatusView(

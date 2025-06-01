@@ -88,7 +88,7 @@ class ContributorAccount() {
     fun currentBalance(): Double =
         transactions
             .flatMap { it.valueOperations }
-            .sumOf { it.signedAmount() }
+            .sumOf { it.signedCurrentAmount() }
 
     data class ContributorAccountStatus(
         val status: ContributorAccountStatusValues,
