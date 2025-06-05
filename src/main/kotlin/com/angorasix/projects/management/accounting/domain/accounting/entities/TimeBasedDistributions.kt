@@ -159,7 +159,6 @@ data class LinearFunctionUp internal constructor(
         if (b <= a) return 0.0
 
         val area = peakValue / (2 * durationMillis) * (b * b - a * a)
-        println("UP Integrating from $a to $b with peakValue $peakValue and durationMillis $durationMillis, and obtained: $area")
         return area
     }
 }
@@ -201,9 +200,6 @@ data class LinearFunctionDown internal constructor(
         // ∫ₐᵇ peak * (1 − t/duration) dt = peak * [ (b − b²/(2·duration)) − (a − a²/(2·duration)) ]
         fun integrate(x: Double): Double = peakValue * (x - (x * x) / (2 * durationMillis))
 
-        println(
-            "DOWN Integrating from $a to $b with peakValue $peakValue and durationMillis $durationMillis: ${integrate(b) - integrate(a)}",
-        )
         return integrate(b) - integrate(a)
     }
 }

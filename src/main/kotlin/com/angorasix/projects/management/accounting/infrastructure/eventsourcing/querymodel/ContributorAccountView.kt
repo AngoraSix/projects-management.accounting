@@ -1,7 +1,7 @@
 package com.angorasix.projects.management.accounting.infrastructure.eventsourcing.querymodel
 
 import com.angorasix.projects.management.accounting.domain.accounting.aggregates.ContributorAccount
-import com.angorasix.projects.management.accounting.domain.accounting.entities.TransactionOperation
+import com.angorasix.projects.management.accounting.domain.accounting.entities.Transaction
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
 import java.time.Instant
@@ -17,7 +17,7 @@ data class ContributorAccountView(
 //    val unprocessedTransactionOperations: List<TransactionOperation>,
 //    val processedTransactionOperations: List<TransactionOperation>,
     val lastUpdatedInstant: Instant,
-    val transactionOperations: List<TransactionOperation>,
+    val transactions: List<Transaction>,
     val status: ContributorAccountStatusView,
 ) {
     fun copyUpdateToInstant(checkpointInstant: Instant): ContributorAccountView =
@@ -32,10 +32,10 @@ data class ContributorAccountView(
      *   • lastUpdatedBalance  (lo que ya estaba guardado en el checkpoint)
      *   • más la suma de signedAmount() de cada TransactionOperation pendiente
      */
-    fun calculateCurrentBalance(): Double {
+    fun calculateBalanceAt(at: Instant): Double {
 //        val pendingTotal = transactionOperations.sumOf { it.signedCurrentAmount() }
 //        return lastUpdatedBalance + pendingTotal
-        return transactionOperations.sumOf { it.signedCurrentAmount() }
+        return transactions.flatMap { it.valueOperations }.sumOf { it.signedAmountUntil(at) }
     }
 }
 

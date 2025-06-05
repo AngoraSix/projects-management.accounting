@@ -29,8 +29,8 @@ data class TransactionOperation(
     val valueDistribution: List<TimeBasedDistribution>,
     val fullyDefinedInstant: Instant,
 ) {
-    fun signedCurrentAmount(): Double {
-        val area = valueDistribution.sumOf { it.integrateToNow() }
+    fun signedAmountUntil(until: Instant): Double {
+        val area = valueDistribution.sumOf { it.integrateTo(until) }
         return area * balanceEffect.multiplier
     }
 }

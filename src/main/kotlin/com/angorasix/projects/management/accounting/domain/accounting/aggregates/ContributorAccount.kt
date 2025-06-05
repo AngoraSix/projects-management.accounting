@@ -44,8 +44,6 @@ class ContributorAccount() {
 
     @CommandHandler
     fun handle(cmd: AddTransactionCommand) {
-        println("CAOUNTTT Adding transaction: ${cmd.transactionId} to account: ${cmd.accountId}")
-        println("CAOUNTTT Transaction: ${cmd.transaction}")
         apply(
             TransactionAddedEvent(
                 accountId = cmd.accountId,
@@ -87,10 +85,13 @@ class ContributorAccount() {
     }
 
     // Business method to compute the current balance.
-    fun currentBalance(): Double =
+    fun balanceAt(at: Instant): Double =
         transactions
             .flatMap { it.valueOperations }
-            .sumOf { it.signedCurrentAmount() }
+            .sumOf { it.signedAmountUntil(at) }
+
+    // Business method to compute the current balance.
+    fun currentBalance(): Double = balanceAt(Instant.now())
 
     data class ContributorAccountStatus(
         val status: ContributorAccountStatusValues,

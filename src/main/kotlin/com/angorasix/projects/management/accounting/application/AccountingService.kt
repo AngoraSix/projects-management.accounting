@@ -12,6 +12,7 @@ import com.angorasix.projects.management.accounting.domain.accounting.entities.T
 import com.angorasix.projects.management.accounting.domain.accounting.entities.Transaction
 import com.angorasix.projects.management.accounting.domain.accounting.entities.TransactionOperation
 import com.angorasix.projects.management.accounting.domain.accounting.entities.TransactionSource
+import com.angorasix.projects.management.accounting.infrastructure.constants.TRANSACTION_SOURCES_TASK_EARNINGS
 import com.angorasix.projects.management.accounting.infrastructure.domain.AccountStats
 import com.angorasix.projects.management.accounting.infrastructure.domain.ContributorAccountingStats
 import com.angorasix.projects.management.accounting.infrastructure.domain.ProjectAccountingStats
@@ -21,6 +22,7 @@ import com.angorasix.projects.management.accounting.infrastructure.eventsourcing
 import com.angorasix.projects.management.accounting.infrastructure.queryfilters.ListAccountingFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
@@ -80,7 +82,7 @@ class AccountingService(
                 val perContributor: Map<String, List<ManagementTasksClosed.ManagementTaskClosed>> =
                     closedTasks
                         .filter {
-                            it.caps != null && it.caps!! > 0.0
+                            it.assigneeContributorIds.isNotEmpty() && it.caps != null && it.caps!! > 0.0
                         }.flatMap { task ->
                             task.assigneeContributorIds.map { contributorId ->
                                 contributorId to task
@@ -104,16 +106,23 @@ class AccountingService(
                     val ownershipAccountView: ContributorAccountView? =
                         repository
                             .findSingleUsingFilter(ownershipFilter, null)
-
                     if (ownershipAccountView == null) {
                         // No active ownership account found for this contributor; skip.
                         return@forEach
                     }
+                    val newTasks =
+                        tasksForThisContributor.filter {
+                            val allAlreadyProcessedTasks =
+                                ownershipAccountView.transactions
+                                    .filter { t -> t.transactionSource.sourceType == TRANSACTION_SOURCES_TASK_EARNINGS }
+                                    .flatMap { t -> t.transactionSource.sourceIds }
+                            !allAlreadyProcessedTasks.contains(it.taskId)
+                        }
 
                     // 3) Build one TransactionOperation per closed task, using a triangular distribution:
                     val nowInstant = Instant.now()
                     val operations: List<TransactionOperation> =
-                        tasksForThisContributor.map { task ->
+                        newTasks.map { task ->
 
                             // a) Determine the rule (duration) to use. For “startup”, always take startupDefaultDuration:
                             val rule =
@@ -161,8 +170,8 @@ class AccountingService(
                             registeredInstant = nowInstant,
                             transactionSource =
                                 TransactionSource(
-                                    sourceType = "TASK_EARNINGS",
-                                    sourceIds = tasksForThisContributor.map { it.taskId }.toSet(),
+                                    sourceType = TRANSACTION_SOURCES_TASK_EARNINGS,
+                                    sourceIds = newTasks.map { it.taskId }.toSet(),
                                     sourceOperation = "closedTasksBatch",
                                 ),
                         )
@@ -267,7 +276,7 @@ suspend fun Flow<ContributorAccountView>.toProjectStats(): ProjectAccountingStat
 }
 
 suspend fun Flow<ContributorAccountView>.toContributorStats(contributorId: String): ContributorAccountingStats {
-    val (ownershipStats, financeStats: List<AccountStats>) = toOwnershipVsFinancialStats()
+    val (ownershipStats, financeStats: List<AccountStats>) = this.filter { it.contributorId == contributorId }.toOwnershipVsFinancialStats()
     return ContributorAccountingStats(
         contributorId = contributorId,
         ownership = ownershipStats,
@@ -279,7 +288,9 @@ suspend fun Flow<ContributorAccountView>.toContributorStats(contributorId: Strin
  * Flow<ContributorAccountView> extension that collects the accounts,
  * partitions them between “ownership” vs “financial” and retrieves an AccountingStats.
  */
-private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(): Pair<AccountStats, List<AccountStats>> {
+private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(
+    multipleCurrenciesAllowed: Boolean = true,
+): Pair<AccountStats, List<AccountStats>> {
     // 1) Collect the Flow into a List
     val allAccounts: List<ContributorAccountView> = this.toList()
 
@@ -288,10 +299,11 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(): 
         allAccounts.partition { it.accountType == "OWNERSHIP" }
 
     // 3) Calculate ownership stats
+    val requestInstant = Instant.now()
     val ownershipStats =
-        if (ownershipAccounts.isNotEmpty()) {
+        if (ownershipAccounts.isNotEmpty() && (multipleCurrenciesAllowed || ownershipAccounts.size == 1)) {
             val currency = ownershipAccounts.first().currency
-            val totalBalance = ownershipAccounts.sumOf { it.calculateCurrentBalance() }
+            val totalBalance = ownershipAccounts.sumOf { it.calculateBalanceAt(requestInstant) }
             AccountStats(balance = totalBalance, currency = currency)
         } else {
             AccountStats(balance = 0.0, currency = "")
@@ -302,7 +314,10 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(): 
         nonOwnershipAccounts
             .groupBy { it.currency }
             .map { (currency, accountsOfSameCurrency) ->
-                val totalBalanceForThatCurrency = accountsOfSameCurrency.sumOf { it.calculateCurrentBalance() }
+                require(
+                    multipleCurrenciesAllowed || accountsOfSameCurrency.size == 1,
+                ) { "Expected only one account per currency, found ${accountsOfSameCurrency.size} for $currency" }
+                val totalBalanceForThatCurrency = accountsOfSameCurrency.sumOf { it.calculateBalanceAt(requestInstant) }
                 AccountStats(balance = totalBalanceForThatCurrency, currency = currency)
             }
     return Pair(ownershipStats, financeStats)

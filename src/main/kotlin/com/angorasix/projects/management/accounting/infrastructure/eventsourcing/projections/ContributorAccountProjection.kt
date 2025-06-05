@@ -27,7 +27,7 @@ class ContributorAccountProjection(
                     accountType = event.accountType.name,
                     lastUpdatedInstant = event.createdInstant,
 //                    lastUpdatedBalance = 0.0,
-                    transactionOperations = mutableListOf(),
+                    transactions = emptyList(),
                     status =
                         ContributorAccountStatusView(
                             status =
@@ -53,11 +53,11 @@ class ContributorAccountProjection(
                     // Here you might recalculate the new balance using your domain logic;
                     // for demonstration, we add the integrated value from the transaction.
                     val currentUpdatedInstant = Instant.now()
-                    val allOperations = event.transaction.valueOperations + view.transactionOperations
+                    val allOperations = view.transactions + event.transaction
                     val updated =
                         view.copy(
                             lastUpdatedInstant = currentUpdatedInstant,
-                            transactionOperations = allOperations,
+                            transactions = allOperations,
                         )
                     repository.save(updated)
                 }
