@@ -44,6 +44,8 @@ class ContributorAccount() {
 
     @CommandHandler
     fun handle(cmd: AddTransactionCommand) {
+        println("CAOUNTTT Adding transaction: ${cmd.transactionId} to account: ${cmd.accountId}")
+        println("CAOUNTTT Transaction: ${cmd.transaction}")
         apply(
             TransactionAddedEvent(
                 accountId = cmd.accountId,

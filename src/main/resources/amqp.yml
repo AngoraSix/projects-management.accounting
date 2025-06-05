@@ -12,9 +12,16 @@ spring:
           destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_EXCHANGE:managementContributorRegistered} # existing exchange (or creates)?
           group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_CREATEACCOUNTSFORMGMT_INPUT_QUEUE:accountingRegistration}
           binder: a6Rabbit
+        registerTaskEarnings-in-0:
+          destination: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_REGISTERTASKSEARNINGS_INPUT_EXCHANGE:managementTasksClosed} # existing exchange (or creates)?
+          group: ${A6_PROJECTS_MGMT_ACCOUNTING_RABBITMQ_REGISTERTASKSEARNINGS_INPUT_QUEUE:accountingRegistration}
+          binder: a6Rabbit
       rabbit:
         bindings:
           createContributorAccountsForMgmt-in-0:
+            consumer:
+              republishToDlq: false
+          registerTaskEarnings-in-0:
             consumer:
               republishToDlq: false
       binders:
@@ -29,4 +36,4 @@ spring:
                 password: ${A6_MGMT_ACCOUNTING_RABBITMQ_PASSWORD:guest}
                 virtual-host: ${A6_MGMT_ACCOUNTING_RABBITMQ_VHOST:/}
     function:
-      definition: createContributorAccountsForMgmt
+      definition: createContributorAccountsForMgmt;registerTaskEarnings

@@ -19,7 +19,7 @@ data class Transaction(
  */
 data class TransactionSource(
     val sourceType: String, // e.g. A6DomainResource.Task, "transfer", "refund", ...
-    val sourceId: String, // e.g. taskId, accountId
+    val sourceIds: Set<String>, // e.g. taskId, accountId, all the taskIds from a batch
     val sourceOperation: String, // e.g. "closedTask", "revert", "executed", ...
     // possibly other fields
 )

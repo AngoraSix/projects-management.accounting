@@ -9,7 +9,7 @@ logging:
     root: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_GENERAL:INFO}
     org.springframework.web: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_WEB:INFO}
     com.angorasix: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_ANGORASIX:INFO}
-    org.springframework.data.mongodb.core: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_DATA:INFO}
+    org.springframework.data.mongodb.core: ${A6_PROJECTS_MGMT_ACCOUNTING_LOGGING_LEVEL_DATA:DEBUG}
 
 spring:
   config:

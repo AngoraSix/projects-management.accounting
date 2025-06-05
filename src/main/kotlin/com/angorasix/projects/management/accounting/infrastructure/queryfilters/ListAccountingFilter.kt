@@ -15,4 +15,6 @@ data class ListAccountingFilter(
     val adminId: Set<String>? = null,
     val ids: Collection<String>? = null, // task ids
     val accountStatus: Set<ContributorAccount.ContributorAccountStatusValues>? = null, // task status
+    val currency: Set<String>? = null, // account currency
+    val accountType: Set<String>? = null,
 )

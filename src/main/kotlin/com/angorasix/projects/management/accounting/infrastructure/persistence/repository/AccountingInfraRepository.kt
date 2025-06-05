@@ -16,4 +16,9 @@ interface AccountingInfraRepository {
         filter: ListAccountingFilter,
         requestingContributor: A6Contributor?,
     ): Flow<ContributorAccountView>
+
+    suspend fun findSingleUsingFilter(
+        filter: ListAccountingFilter,
+        requestingContributor: A6Contributor?,
+    ): ContributorAccountView?
 }

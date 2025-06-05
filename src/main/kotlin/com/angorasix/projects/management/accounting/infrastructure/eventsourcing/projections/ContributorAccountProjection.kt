@@ -26,11 +26,18 @@ class ContributorAccountProjection(
                     currency = event.currency,
                     accountType = event.accountType.name,
                     lastUpdatedInstant = event.createdInstant,
-                    lastUpdatedBalance = 0.0,
-                    unprocessedTransactionOperations = mutableListOf(),
+//                    lastUpdatedBalance = 0.0,
+                    transactionOperations = mutableListOf(),
                     status =
                         ContributorAccountStatusView(
-                            status = ContributorAccount.ContributorAccountStatusValues.PENDING,
+                            status =
+                                if (event.accountType ==
+                                    ContributorAccount.AccountType.OWNERSHIP
+                                ) {
+                                    ContributorAccount.ContributorAccountStatusValues.ACTIVE
+                                } else {
+                                    ContributorAccount.ContributorAccountStatusValues.PENDING
+                                },
                         ),
                 )
             repository.save(view)
@@ -45,11 +52,12 @@ class ContributorAccountProjection(
                 ?.let { view ->
                     // Here you might recalculate the new balance using your domain logic;
                     // for demonstration, we add the integrated value from the transaction.
-                    val additional = event.transaction.valueOperations.sumOf { it.signedCurrentAmount() }
+                    val currentUpdatedInstant = Instant.now()
+                    val allOperations = event.transaction.valueOperations + view.transactionOperations
                     val updated =
                         view.copy(
-                            lastUpdatedBalance = view.lastUpdatedBalance + additional,
-                            lastUpdatedInstant = Instant.now(),
+                            lastUpdatedInstant = currentUpdatedInstant,
+                            transactionOperations = allOperations,
                         )
                     repository.save(updated)
                 }

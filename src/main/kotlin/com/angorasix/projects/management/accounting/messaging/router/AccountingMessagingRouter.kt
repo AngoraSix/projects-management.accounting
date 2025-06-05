@@ -1,6 +1,7 @@
 package com.angorasix.projects.management.accounting.messaging.router
 
 import com.angorasix.commons.infrastructure.intercommunication.messaging.A6InfraMessageDto
+import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ManagementTasksClosed
 import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ProjectManagementContributorRegistered
 import com.angorasix.projects.management.accounting.messaging.handler.AccountingMessagingHandler
 import org.springframework.context.annotation.Bean
@@ -19,4 +20,7 @@ class AccountingMessagingRouter(
     @Bean
     fun createContributorAccountsForMgmt(): (A6InfraMessageDto<ProjectManagementContributorRegistered>) -> Unit =
         { handler.createContributorAccountsForMgmt(it) }
+
+    @Bean
+    fun registerTaskEarnings(): (A6InfraMessageDto<ManagementTasksClosed>) -> Unit = { handler.registerTaskEarnings(it) }
 }
