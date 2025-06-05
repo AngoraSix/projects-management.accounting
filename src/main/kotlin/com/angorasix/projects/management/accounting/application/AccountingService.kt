@@ -136,12 +136,12 @@ class AccountingService(
                             val halfDuration: Duration = rule.startupDefaultDuration.dividedBy(2)
 
                             // (i) LINEAR_UP from doneInstant → doneInstant + halfDuration, area = caps
-                            val up =
+                            val impulse =
                                 TimeBasedDistributionFactory.distributionForOwnership(
-                                    distributionType = DistributionType.LINEAR_UP,
+                                    distributionType = DistributionType.IMPULSE,
                                     mainValue = task.caps!!,
                                     startInstant = nowInstant, // or task.doneInstant?
-                                    duration = halfDuration,
+                                    duration = Duration.ZERO, // should be done automatically on Impulse definition anyway
                                 )
 
                             // (ii) LINEAR_DOWN from (doneInstant + halfDuration) → (doneInstant + fullDuration)
@@ -156,7 +156,7 @@ class AccountingService(
                             // Build a TransactionOperation that “credits” the contributor:
                             TransactionOperation(
                                 balanceEffect = BalanceEffect.CREDIT,
-                                valueDistribution = listOf(up, down),
+                                valueDistribution = listOf(impulse, down),
                                 fullyDefinedInstant = nowInstant,
                             )
                         }
