@@ -1,11 +1,24 @@
 package com.angorasix.projects.management.accounting.domain.accounting.entities
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.time.Duration
 import java.time.Instant
 
 /**
  * Represents a time-based distribution function.
  */
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "distributionType",
+)
+@JsonSubTypes(
+    JsonSubTypes.Type(LinearFunctionUp::class, name = "LINEAR_UP"),
+    JsonSubTypes.Type(LinearFunctionDown::class, name = "LINEAR_DOWN"),
+    JsonSubTypes.Type(Impulse::class, name = "IMPULSE"),
+    JsonSubTypes.Type(Step::class, name = "STEP"),
+)
 interface TimeBasedDistribution {
     val functionType: DistributionType // LINEAR, STEP, etc.
     val mainValue: Double // in general, the value of the estimation output (caps)
@@ -61,10 +74,18 @@ object TimeBasedDistributionFactory {
                 )
 
             DistributionType.IMPULSE ->
-                LinearFunctionDown(
+                Impulse(
                     mainValue = mainValue,
                     startInstant = startInstant,
                     duration = Duration.ZERO,
+                    peakValue = mainValue,
+                )
+
+            DistributionType.STEP ->
+                Step(
+                    mainValue = mainValue,
+                    startInstant = startInstant,
+                    duration = duration,
                     peakValue = mainValue,
                 )
             // Handle other types accordingly...
@@ -97,11 +118,19 @@ object TimeBasedDistributionFactory {
                 )
 
             DistributionType.IMPULSE ->
-                LinearFunctionDown(
+                Impulse(
                     mainValue = mainValue,
                     startInstant = startInstant,
                     duration = Duration.ZERO,
                     peakValue = mainValue,
+                )
+
+            DistributionType.STEP ->
+                Step(
+                    mainValue = mainValue,
+                    startInstant = startInstant,
+                    duration = Duration.ZERO,
+                    peakValue = resolveStepFunctionPeak(mainValue, duration),
                 )
             // Handle other types accordingly...
         }
@@ -109,20 +138,30 @@ object TimeBasedDistributionFactory {
     /**
      * For a linear ramp, mainValue represents the Area Value.
      * The full area is (peakValue * duration) / 2.
-     * To obtain the peakValue such that the area equals areaValue.
+     * So, peakValue = 2 × areaValue ⁄ duration
      */
     private fun resolveLinearFunctionPeak(
         areaValue: Double,
         duration: Duration,
-    ) = (2 * areaValue) / duration.toMillis().toDouble()
+    ): Double = (2 * areaValue) / duration.toMillis().toDouble()
+
+    /**
+     * For a step, mainValue represents the Area Value.
+     * The full area is peakValue * duration.
+     * So, peakValue = areaValue ⁄ duration
+     */
+    private fun resolveStepFunctionPeak(
+        areaValue: Double,
+        duration: Duration,
+    ): Double = areaValue / duration.toMillis().toDouble()
 }
 
 // Nested implementation for a linear function that goes up.
-class LinearFunctionUp internal constructor(
+data class LinearFunctionUp internal constructor(
     override val mainValue: Double,
     override val startInstant: Instant,
     override val duration: Duration,
-    private val peakValue: Double,
+    val peakValue: Double,
 ) : TimeBasedDistribution {
     override val functionType: DistributionType = DistributionType.LINEAR_UP
 
@@ -138,18 +177,25 @@ class LinearFunctionUp internal constructor(
         to: Instant,
     ): Double {
         val startMillis = startInstant.toEpochMilli()
-        val a = ((from.toEpochMilli() - startMillis).coerceAtLeast(0L)).toDouble()
-        val b = ((to.toEpochMilli() - startMillis).coerceAtMost(duration.toMillis())).toDouble()
-        return peakValue / (2 * duration.toMillis().toDouble()) * (b * b - a * a)
+        val rawA = (from.toEpochMilli() - startMillis).toDouble()
+        val rawB = (to.toEpochMilli() - startMillis).toDouble()
+        val durationMillis = duration.toMillis().toDouble()
+
+        val a = rawA.coerceIn(0.0, durationMillis)
+        val b = rawB.coerceIn(0.0, durationMillis)
+        if (b <= a) return 0.0
+
+        val area = peakValue / (2 * durationMillis) * (b * b - a * a)
+        return area
     }
 }
 
 // Nested implementation for a linear function that goes down.
-class LinearFunctionDown internal constructor(
+data class LinearFunctionDown internal constructor(
     override val mainValue: Double,
     override val startInstant: Instant,
     override val duration: Duration,
-    private val peakValue: Double,
+    val peakValue: Double,
 ) : TimeBasedDistribution {
     override val functionType: DistributionType = DistributionType.LINEAR_DOWN
 
@@ -165,20 +211,32 @@ class LinearFunctionDown internal constructor(
         to: Instant,
     ): Double {
         val startMillis = startInstant.toEpochMilli()
-        val a = ((from.toEpochMilli() - startMillis).coerceAtLeast(0L)).toDouble()
-        val b = ((to.toEpochMilli() - startMillis).coerceAtMost(duration.toMillis())).toDouble()
+        val rawA = (from.toEpochMilli() - startMillis).toDouble()
+        val rawB = (to.toEpochMilli() - startMillis).toDouble()
+        val durationMillis = duration.toMillis().toDouble()
 
-        fun integrate(x: Double) = peakValue * (x - (x * x) / (2 * duration.toMillis().toDouble()))
+        // clamp both ends into [0, durationMillis]:
+        val a = rawA.coerceIn(0.0, durationMillis)
+        val b = rawB.coerceIn(0.0, durationMillis)
+
+        // if the “to”‐end does not exceed the “from”‐end, area is zero:
+        if (b <= a) {
+            return 0.0
+        }
+
+        // ∫ₐᵇ peak * (1 − t/duration) dt = peak * [ (b − b²/(2·duration)) − (a − a²/(2·duration)) ]
+        fun integrate(x: Double): Double = peakValue * (x - (x * x) / (2 * durationMillis))
+
         return integrate(b) - integrate(a)
     }
 }
 
 // Nested implementation for an impulse function, giving a particular value at an instant.
-class Impulse internal constructor(
+data class Impulse internal constructor(
     override val mainValue: Double,
     override val startInstant: Instant,
     override val duration: Duration,
-    private val peakValue: Double,
+    val peakValue: Double,
 ) : TimeBasedDistribution {
     override val functionType: DistributionType = DistributionType.IMPULSE
 
@@ -188,11 +246,41 @@ class Impulse internal constructor(
         from: Instant,
         to: Instant,
     ): Double =
-        if (from.isBefore(startInstant) && to.isAfter(startInstant)) {
+        if (from.minusMillis(1).isBefore(startInstant) && to.isAfter(startInstant)) {
             peakValue
         } else {
             0.0
         }
+}
+
+// Nested implementation for an step function, constant for the period for the peakValue.
+data class Step internal constructor(
+    override val mainValue: Double,
+    override val startInstant: Instant,
+    override val duration: Duration,
+    val peakValue: Double,
+) : TimeBasedDistribution {
+    override val functionType: DistributionType = DistributionType.STEP
+
+    override fun evaluateAt(t: Instant): Double =
+        if (t.isBefore(startInstant).or(t.isAfter(startInstant.plus(duration)))) 0.0 else peakValue
+
+    override fun integrateFromTo(
+        from: Instant,
+        to: Instant,
+    ): Double {
+        val startMillis = startInstant.toEpochMilli()
+        val rawA = (from.toEpochMilli() - startMillis).toDouble()
+        val rawB = (to.toEpochMilli() - startMillis).toDouble()
+        val durationMillis = duration.toMillis().toDouble()
+
+        val a = rawA.coerceIn(0.0, durationMillis)
+        val b = rawB.coerceIn(0.0, durationMillis)
+        if (b <= a) return 0.0
+
+        val area = (b - a) * peakValue
+        return area
+    }
 }
 
 enum class DistributionType(
@@ -201,5 +289,6 @@ enum class DistributionType(
     LINEAR_UP(LinearFunctionUp::class.java),
     LINEAR_DOWN(LinearFunctionDown::class.java),
     IMPULSE(Impulse::class.java),
+    STEP(Step::class.java),
     // ...other types
 }

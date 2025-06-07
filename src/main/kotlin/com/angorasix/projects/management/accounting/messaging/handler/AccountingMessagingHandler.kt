@@ -3,6 +3,7 @@ package com.angorasix.projects.management.accounting.messaging.handler
 import com.angorasix.commons.infrastructure.intercommunication.A6DomainResource
 import com.angorasix.commons.infrastructure.intercommunication.A6InfraTopics
 import com.angorasix.commons.infrastructure.intercommunication.messaging.A6InfraMessageDto
+import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ManagementTasksClosed
 import com.angorasix.commons.infrastructure.intercommunication.projectmanagement.ProjectManagementContributorRegistered
 import com.angorasix.projects.management.accounting.application.AccountingService
 import kotlinx.coroutines.runBlocking
@@ -26,8 +27,24 @@ class AccountingMessagingHandler(
                 service.createContributorAccountsForProjectManagement(
                     projectManagementId = contributorRegisteredEvent.projectManagementId,
                     contributorId = contributorRegisteredEvent.registeredContributorId,
-                    requiresOwnershipAccount =
-                        contributorRegisteredEvent.participatesInOwnership,
+                    ownershipCurrency = contributorRegisteredEvent.ownershipCurrency,
+//                    managedCurrencies = contributorRegisteredEvent.managementFinancialCurrencies,
+                )
+            }
+        }
+
+    fun registerTaskEarnings(message: A6InfraMessageDto<ManagementTasksClosed>) =
+        runBlocking {
+            if (message.topic == A6InfraTopics.PROJECT_MANAGEMENT_TASKS_CLOSED.value &&
+                message.targetType == A6DomainResource.PROJECT_MANAGEMENT
+            ) {
+                val tasksClosedEvent = message.messageData
+
+                service.registerTaskEarnings(
+                    projectManagementId = tasksClosedEvent.projectManagementId,
+                    closedTasks = tasksClosedEvent.collection,
+                    ownershipCurrency = tasksClosedEvent.ownershipCurrency,
+                    currencyDistributionRules = tasksClosedEvent.currencyDistributionRules,
 //                    managedCurrencies = contributorRegisteredEvent.managementFinancialCurrencies,
                 )
             }
