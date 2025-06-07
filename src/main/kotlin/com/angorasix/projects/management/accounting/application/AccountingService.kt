@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import org.axonframework.commandhandling.gateway.CommandGateway
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -130,7 +131,7 @@ class AccountingService(
         if (newTasks.isEmpty()) return
 
         val now = Instant.now()
-        val ops = newTasks.map { mkOperation(it, now, rules[currency]!!) }
+        val ops = newTasks.map { mkOwnershipOperation(it, now, rules[currency]!!) }
         val txn =
             Transaction(
                 transactionId = transactionBatchId,
@@ -154,29 +155,29 @@ class AccountingService(
             ).await()
     }
 
-    private fun mkOperation(
+    private fun mkOwnershipOperation(
         task: ManagementTasksClosed.ManagementTaskClosed,
         now: Instant,
         rule: ManagementTasksClosed.TasksDistributionRules,
     ): TransactionOperation {
         val half = rule.startupDefaultDuration.dividedBy(2)
-        val up =
+        val upImpulse =
             TimeBasedDistributionFactory.distributionForOwnership(
-                DistributionType.LINEAR_UP,
-                task.caps!!,
-                now,
-                half,
+                distributionType = DistributionType.IMPULSE,
+                mainValue = task.caps!!,
+                startInstant = now,
+                duration = Duration.ZERO, // should be done automatically on Impulse definition anyway
             )
         val down =
             TimeBasedDistributionFactory.distributionForOwnership(
-                DistributionType.LINEAR_DOWN,
-                task.caps!!,
-                now.plus(half),
-                half,
+                distributionType = DistributionType.LINEAR_DOWN,
+                mainValue = task.caps!!,
+                startInstant = now.plus(half),
+                duration = half,
             )
         return TransactionOperation(
             balanceEffect = BalanceEffect.CREDIT,
-            valueDistribution = listOf(up, down),
+            valueDistribution = listOf(upImpulse, down),
             fullyDefinedInstant = now,
         )
     }

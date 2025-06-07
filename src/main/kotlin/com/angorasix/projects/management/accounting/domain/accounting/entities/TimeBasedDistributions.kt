@@ -246,7 +246,7 @@ data class Impulse internal constructor(
         from: Instant,
         to: Instant,
     ): Double =
-        if (from.minusMillis(1).isBefore(startInstant) && to.isAfter(startInstant)) {
+        if (from.minusMillis(1).isBefore(startInstant) && to.plusMillis(1).isAfter(startInstant)) {
             peakValue
         } else {
             0.0
