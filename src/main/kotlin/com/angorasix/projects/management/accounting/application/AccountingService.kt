@@ -27,7 +27,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import org.axonframework.commandhandling.gateway.CommandGateway
-import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 
@@ -72,123 +71,115 @@ class AccountingService(
         closedTasks: List<ManagementTasksClosed.ManagementTaskClosed>,
         ownershipCurrency: String?,
         currencyDistributionRules: Map<String, ManagementTasksClosed.TasksDistributionRules>,
-        // managedCurrencies: Set<String>, // not checked, future feature: Trello-CDwXGxpn
     ): String =
         withContext(Dispatchers.Default) {
-            val batchTransactionId = UUID.randomUUID().toString()
-            ownershipCurrency?.let { currency ->
-                // 1) Group all closed tasks by each assignee (contributorId).
-                //    Because a single task may have multiple assignees, we “flatten” into (contributorId → task) pairs.
-                val perContributor: Map<String, List<ManagementTasksClosed.ManagementTaskClosed>> =
-                    closedTasks
-                        .filter {
-                            it.assigneeContributorIds.isNotEmpty() && it.caps != null && it.caps!! > 0.0
-                        }.flatMap { task ->
-                            task.assigneeContributorIds.map { contributorId ->
-                                contributorId to task
-                            }
-                        }.groupBy({ it.first }, { it.second })
-                // 2) For each contributor who has at least one closed task, look up their ownership account.
-                //    If no active ownership account exists, skip that contributor.
-                perContributor.forEach { (contributorId, tasksForThisContributor) ->
-                    // Build a filter to find the contributor’s active ownership account in this projectManagementId:
-                    val ownershipFilter =
-                        ListAccountingFilter(
-                            projectManagementId = setOf(projectManagementId),
-                            accountStatus = setOf(ContributorAccount.ContributorAccountStatusValues.ACTIVE),
-                            contributorId = setOf(contributorId),
-                            accountType = setOf(ContributorAccount.AccountType.OWNERSHIP.name),
-                            currency = setOf(currency),
-                        )
-
-                    // repository.findUsingFilter returns a Flow<ContributorAccountView>.
-                    // We just want the first matching active ownership account (if any).
-                    val ownershipAccountView: ContributorAccountView? =
-                        repository
-                            .findSingleUsingFilter(ownershipFilter, null)
-                    if (ownershipAccountView == null) {
-                        // No active ownership account found for this contributor; skip.
-                        return@forEach
-                    }
-                    val newTasks =
-                        tasksForThisContributor.filter {
-                            val allAlreadyProcessedTasks =
-                                ownershipAccountView.transactions
-                                    .filter { t -> t.transactionSource.sourceType == TRANSACTION_SOURCES_TASK_EARNINGS }
-                                    .flatMap { t -> t.transactionSource.sourceIds }
-                            !allAlreadyProcessedTasks.contains(it.taskId)
-                        }
-
-                    // 3) Build one TransactionOperation per closed task, using a triangular distribution:
-                    val nowInstant = Instant.now()
-                    val operations: List<TransactionOperation> =
-                        newTasks.map { task ->
-
-                            // a) Determine the rule (duration) to use. For “startup”, always take startupDefaultDuration:
-                            val rule =
-                                currencyDistributionRules[currency]
-                                    ?: throw IllegalArgumentException(
-                                        "Missing distribution rules for currency '$currency'",
-                                    )
-
-                            // We want a full “triangle” whose total area = `caps`.
-                            // Split the full duration into two halves:
-                            val halfDuration: Duration = rule.startupDefaultDuration.dividedBy(2)
-
-                            // (i) LINEAR_UP from doneInstant → doneInstant + halfDuration, area = caps
-                            val impulse =
-                                TimeBasedDistributionFactory.distributionForOwnership(
-                                    distributionType = DistributionType.IMPULSE,
-                                    mainValue = task.caps!!,
-                                    startInstant = nowInstant, // or task.doneInstant?
-                                    duration = Duration.ZERO, // should be done automatically on Impulse definition anyway
-                                )
-
-                            // (ii) LINEAR_DOWN from (doneInstant + halfDuration) → (doneInstant + fullDuration)
-                            val down =
-                                TimeBasedDistributionFactory.distributionForOwnership(
-                                    distributionType = DistributionType.LINEAR_DOWN,
-                                    mainValue = task.caps!!,
-                                    startInstant = nowInstant.plus(halfDuration), // same, nowInstant or task.doneInstant?
-                                    duration = halfDuration,
-                                )
-
-                            // Build a TransactionOperation that “credits” the contributor:
-                            TransactionOperation(
-                                balanceEffect = BalanceEffect.CREDIT,
-                                valueDistribution = listOf(impulse, down),
-                                fullyDefinedInstant = nowInstant,
+            ownershipCurrency
+                ?.takeIf { it.isNotBlank() }
+                ?.let { currency ->
+                    groupByAssignee(closedTasks)
+                        .forEach { (contributorId, tasks) ->
+                            handleContributorEarnings(
+                                projectManagementId,
+                                contributorId,
+                                tasks,
+                                currency,
+                                currencyDistributionRules,
                             )
                         }
-
-                    // 4) Bundle all those operations into a single Transaction:
-                    val transaction =
-                        Transaction(
-                            transactionId = batchTransactionId,
-                            contributorAccountId = ownershipAccountView.accountId,
-                            valueOperations = operations,
-                            registeredInstant = nowInstant,
-                            transactionSource =
-                                TransactionSource(
-                                    sourceType = TRANSACTION_SOURCES_TASK_EARNINGS,
-                                    sourceIds = newTasks.map { it.taskId }.toSet(),
-                                    sourceOperation = "closedTasksBatch",
-                                ),
-                        )
-
-                    // 5) Send one AddTransactionCommand per‐contributor:
-                    val addTxnCmd =
-                        AddTransactionCommand(
-                            accountId = ownershipAccountView.accountId,
-                            transactionId = batchTransactionId,
-                            transaction = transaction,
-                        )
-                    commandGateway.send<Any>(addTxnCmd).await() // wait for Axon to accept it
                 }
-            }
-            "return done"
-//            return commandGateway.send(cmd)
+
+            "done"
         }
+
+    private fun groupByAssignee(
+        closed: List<ManagementTasksClosed.ManagementTaskClosed>,
+    ): Map<String, List<ManagementTasksClosed.ManagementTaskClosed>> =
+        closed
+            .filter { it.assigneeContributorIds.isNotEmpty() && (it.caps ?: 0.0) > 0.0 }
+            .flatMap { task ->
+                task.assigneeContributorIds.map { it to task }
+            }.groupBy({ it.first }, { it.second })
+
+    private suspend fun handleContributorEarnings(
+        projectManagementId: String,
+        contributorId: String,
+        tasks: List<ManagementTasksClosed.ManagementTaskClosed>,
+        currency: String,
+        rules: Map<String, ManagementTasksClosed.TasksDistributionRules>,
+    ) {
+        val transactionBatchId = UUID.randomUUID().toString()
+        val ownership =
+            repository.findSingleUsingFilter(
+                ListAccountingFilter(
+                    projectManagementId = setOf(projectManagementId),
+                    accountStatus = setOf(ContributorAccount.ContributorAccountStatusValues.ACTIVE),
+                    contributorId = setOf(contributorId),
+                    accountType = setOf(ContributorAccount.AccountType.OWNERSHIP.name),
+                    currency = setOf(currency),
+                ),
+                null,
+            ) ?: return
+
+        val newTasks =
+            tasks.filterNot { t ->
+                ownership.transactions
+                    .filter { it.transactionSource.sourceType == TRANSACTION_SOURCES_TASK_EARNINGS }
+                    .flatMap { it.transactionSource.sourceIds }
+                    .contains(t.taskId)
+            }
+        if (newTasks.isEmpty()) return
+
+        val now = Instant.now()
+        val ops = newTasks.map { mkOperation(it, now, rules[currency]!!) }
+        val txn =
+            Transaction(
+                transactionId = transactionBatchId,
+                contributorAccountId = ownership.accountId,
+                valueOperations = ops,
+                registeredInstant = now,
+                transactionSource =
+                    TransactionSource(
+                        sourceType = TRANSACTION_SOURCES_TASK_EARNINGS,
+                        sourceIds = newTasks.map { it.taskId }.toSet(),
+                        sourceOperation = "closedTasksBatch",
+                    ),
+            )
+        commandGateway
+            .send<Any>(
+                AddTransactionCommand(
+                    transactionId = transactionBatchId,
+                    accountId = ownership.accountId,
+                    transaction = txn,
+                ),
+            ).await()
+    }
+
+    private fun mkOperation(
+        task: ManagementTasksClosed.ManagementTaskClosed,
+        now: Instant,
+        rule: ManagementTasksClosed.TasksDistributionRules,
+    ): TransactionOperation {
+        val half = rule.startupDefaultDuration.dividedBy(2)
+        val up =
+            TimeBasedDistributionFactory.distributionForOwnership(
+                DistributionType.LINEAR_UP,
+                task.caps!!,
+                now,
+                half,
+            )
+        val down =
+            TimeBasedDistributionFactory.distributionForOwnership(
+                DistributionType.LINEAR_DOWN,
+                task.caps!!,
+                now.plus(half),
+                half,
+            )
+        return TransactionOperation(
+            balanceEffect = BalanceEffect.CREDIT,
+            valueDistribution = listOf(up, down),
+            fullyDefinedInstant = now,
+        )
+    }
 
     suspend fun addTransaction(
         accountId: String,
@@ -276,7 +267,7 @@ suspend fun Flow<ContributorAccountView>.toProjectStats(): ProjectAccountingStat
 }
 
 suspend fun Flow<ContributorAccountView>.toContributorStats(contributorId: String): ContributorAccountingStats {
-    val (ownershipStats, financeStats: List<AccountStats>) = this.filter { it.contributorId == contributorId }.toOwnershipVsFinancialStats()
+    val (ownershipStats, financeStats) = this.filter { it.contributorId == contributorId }.toOwnershipVsFinancialStats()
     return ContributorAccountingStats(
         contributorId = contributorId,
         ownership = ownershipStats,
