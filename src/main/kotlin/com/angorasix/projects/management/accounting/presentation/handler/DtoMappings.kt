@@ -38,6 +38,7 @@ fun ProjectAccountingStats.convertToDto(): ProjectAccountingStatsDto =
 
 fun AccountStats.convertToDto(): AccountStatsDto =
     AccountStatsDto(
-        balance,
-        currency,
+        balance = balance,
+        currency = currency,
+        forecastedBalance = forecastedBalance,
     )
