@@ -316,7 +316,6 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(
                     multipleCurrenciesAllowed || accountsOfSameCurrency.size == 1,
                 ) { "Expected only one account per currency, found ${accountsOfSameCurrency.size} for $currency" }
 
-                val totalBalanceForThatCurrency = accountsOfSameCurrency.sumOf { it.calculateBalanceAt(requestInstant) }
                 val forecastedBalance =
                     calculateForecastedBalance(
                         accountsOfSameCurrency,
@@ -327,15 +326,20 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(
     return Pair(ownershipStats, financeStats)
 }
 
+const val ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_FIRST = 0
+const val ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_LAST = 11
+const val ACCOUNTING_STATS_FORECASTED_PERIOD_DAYS = 30L
+
 private fun calculateForecastedBalance(
     ownershipAccounts: List<ContributorAccountView>,
     requestInstant: Instant,
 ): Map<String, Double> {
-    // generate balance for each month from the requestInstant for 12 months, using it.calculateBalanceAt(eachMonthInstant) and with map key MM-YYYY
+    // generate balance for each month from the requestInstant for 12 months,
+    // using it.calculateBalanceAt(eachMonthInstant) and with map key MM-YYYY
     return ownershipAccounts
         .flatMap { account ->
-            (0..11).map { monthOffset ->
-                val monthInstant = requestInstant.plus(Duration.ofDays(30L * monthOffset.toLong()))
+            (ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_FIRST..ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_LAST).map { monthOffset ->
+                val monthInstant = requestInstant.plus(Duration.ofDays(ACCOUNTING_STATS_FORECASTED_PERIOD_DAYS * monthOffset.toLong()))
                 val balance = account.calculateBalanceAt(monthInstant)
                 val formatter = DateTimeFormatter.ofPattern("MM-yyyy")
                 val formatted = monthInstant.atZone(ZoneOffset.UTC).format(formatter)
