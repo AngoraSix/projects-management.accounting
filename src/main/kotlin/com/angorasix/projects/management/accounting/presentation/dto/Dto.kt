@@ -22,4 +22,5 @@ data class ContributorAccountingStatsDto(
 data class AccountStatsDto(
     val balance: Double,
     val currency: String,
+    val forecastedBalance: Map<String, Double>,
 )

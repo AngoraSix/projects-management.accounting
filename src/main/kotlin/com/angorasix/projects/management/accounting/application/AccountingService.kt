@@ -29,6 +29,8 @@ import kotlinx.coroutines.withContext
 import org.axonframework.commandhandling.gateway.CommandGateway
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 /**
@@ -295,10 +297,14 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(
     val ownershipStats =
         if (ownershipAccounts.isNotEmpty() && (multipleCurrenciesAllowed || ownershipAccounts.size == 1)) {
             val currency = ownershipAccounts.first().currency
-            val totalBalance = ownershipAccounts.sumOf { it.calculateBalanceAt(requestInstant) }
-            AccountStats(balance = totalBalance, currency = currency)
+            val forecastedBalance =
+                calculateForecastedBalance(
+                    ownershipAccounts,
+                    requestInstant,
+                )
+            AccountStats(balance = forecastedBalance.values.first(), currency = currency, forecastedBalance = forecastedBalance)
         } else {
-            AccountStats(balance = 0.0, currency = "")
+            AccountStats(balance = 0.0, currency = "", forecastedBalance = emptyMap())
         }
 
     // 4) Group “nonOwnershipAccounts” by currency and calculate total balance per currency
@@ -309,8 +315,36 @@ private suspend fun Flow<ContributorAccountView>.toOwnershipVsFinancialStats(
                 require(
                     multipleCurrenciesAllowed || accountsOfSameCurrency.size == 1,
                 ) { "Expected only one account per currency, found ${accountsOfSameCurrency.size} for $currency" }
-                val totalBalanceForThatCurrency = accountsOfSameCurrency.sumOf { it.calculateBalanceAt(requestInstant) }
-                AccountStats(balance = totalBalanceForThatCurrency, currency = currency)
+
+                val forecastedBalance =
+                    calculateForecastedBalance(
+                        accountsOfSameCurrency,
+                        requestInstant,
+                    )
+                AccountStats(balance = forecastedBalance.values.first(), currency = currency, forecastedBalance = forecastedBalance)
             }
     return Pair(ownershipStats, financeStats)
+}
+
+const val ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_FIRST = 0
+const val ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_LAST = 11
+const val ACCOUNTING_STATS_FORECASTED_PERIOD_DAYS = 30L
+
+private fun calculateForecastedBalance(
+    ownershipAccounts: List<ContributorAccountView>,
+    requestInstant: Instant,
+): Map<String, Double> {
+    // generate balance for each month from the requestInstant for 12 months,
+    // using it.calculateBalanceAt(eachMonthInstant) and with map key MM-YYYY
+    return ownershipAccounts
+        .flatMap { account ->
+            (ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_FIRST..ACCOUNTING_STATS_FORECASTED_MONTHS_INDEX_LAST).map { monthOffset ->
+                val monthInstant = requestInstant.plus(Duration.ofDays(ACCOUNTING_STATS_FORECASTED_PERIOD_DAYS * monthOffset.toLong()))
+                val balance = account.calculateBalanceAt(monthInstant)
+                val formatter = DateTimeFormatter.ofPattern("MM-yyyy")
+                val formatted = monthInstant.atZone(ZoneOffset.UTC).format(formatter)
+                formatted to balance
+            }
+        }.groupBy({ it.first }, { it.second })
+        .mapValues { (_, balances) -> balances.sum() } // Sum balances for each month
 }
