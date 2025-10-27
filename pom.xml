@@ -8,7 +8,7 @@
   <artifactId>projects.management.accounting</artifactId>
   <name>projects.management.accounting</name>
   <description>Projects Management Accounting Service</description>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
 
   <parent>
     <artifactId>parent-pom-spring-kotlin</artifactId>
