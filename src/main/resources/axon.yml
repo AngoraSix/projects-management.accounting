@@ -1,6 +1,6 @@
 axon:
   axonserver:
-    servers: localhost:8124
+    servers: ${A6_MGMT_ACCOUNTING_AXON_HOST:localhost:8124}
     enabled: true
     authentication:
       enabled: false
